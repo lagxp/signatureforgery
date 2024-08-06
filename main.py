@@ -14,7 +14,6 @@ import subprocess # Import the subprocess module for executing external commands
 from tkinter.filedialog import askopenfilename, askdirectory # Import the askopenfilename and askdirectory functions from the tkinter.filedialog module
 
 
-# New function to write data to CSV file
 def write_to_csv(path1, path2, similarity_percentage):
     file_exists = os.path.isfile('performance_data.csv')
     with open('performance_data.csv', 'a', newline='') as csvfile:
@@ -22,7 +21,7 @@ def write_to_csv(path1, path2, similarity_percentage):
         writer = csv.DictWriter(csvfile, fieldnames=headers)
         if not file_exists:
             writer.writeheader()
-        writer.writerow({'Signature 1': path1, 'Signature 2': path2, 'Percentage Similarity': similarity_percentage})
+        writer.writerow({'Signature 1': os.path.basename(path1), 'Signature 2': os.path.basename(path2), 'Percentage Similarity': similarity_percentage})
 
 # Load pre-trained VGG16 model (without the top classification layer)
 base_model = VGG16(weights='vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', include_top=False, input_shape=(224, 224, 3))
@@ -181,7 +180,7 @@ def show_both_signature_images(path1, path2):
         else:
             messagebox.showerror("Error", "No images found in the folder.")
     else:
-        messagebox.showerror("Error", "Invalid path provided.")
+        messagebox.showerror("Error", "Failed to load one or both images.")
 
 def show_signature_comparison(path1, path2):
     img1 = cv2.imread(path1, cv2.IMREAD_GRAYSCALE)
@@ -273,7 +272,7 @@ def checkForgery(window, original_path, forgery_path):
         # Calculate SSIM similarity between the two images
         similarity = ssim(original_image, forgery_image)
 
-        forgery_threshold = 0.8  # You can adjust this threshold as needed
+        forgery_threshold = 0.7  # You can adjust this threshold as needed
         if similarity < forgery_threshold:
             messagebox.showerror("Forgery Detected", "The signature appears to be a forgery!")
         else:
@@ -302,7 +301,7 @@ def checkForgery(window, original_path, forgery_path):
                 highest_similarity_image = image_path
 
         if highest_similarity_image is not None:
-            forgery_threshold = 0.8  # You can adjust this threshold as needed
+            forgery_threshold = 0.7  # You can adjust this threshold as needed
             if highest_similarity < forgery_threshold:
                 messagebox.showerror("Forgery Detected", f"The signature appears to be a forgery with {os.path.basename(highest_similarity_image)}!")
             else:
@@ -432,6 +431,9 @@ def main():
     global root
     root = tk.Tk()
     root.title("Signature Matching")
+    
+    # Set the window to full-screen mode
+    root.attributes('-fullscreen', True)
 
     # Set the window size
     width = 500
@@ -440,56 +442,63 @@ def main():
     # Center the window on the screen
     center_window(root, width, height)
 
-    # Load the PNG logo
+    # Center the window on the screen
+    center_window(root, width, height)
+
     logo_path = "logo2.png"
-    logo_image = Image.open("C:/Users/Mukesh/OneDrive/Desktop/Signature-Matching-main/Signature-Matching-main/logo/logo4.png")
-    logo_photo = ImageTk.PhotoImage(logo_image)
-    logo_label = tk.Label(root, image=logo_photo)
-    logo_label.pack()
+    try:
+        bg_image = Image.open("C:/Users/Mukesh/OneDrive/Desktop/Signature-Matching-main/Signature-Matching-main/logo/logo4.png")
+        bg_photo = ImageTk.PhotoImage(bg_image)
+        bg_label = tk.Label(root, image=bg_photo)
+        bg_label.image = bg_photo
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)  # Make the background image fill the entire window
+    except Exception as e:
+        print("Error loading background image:", e)
+        root.configure(bg="lightgray")  # Set a default background color if the image fails to load
 
     uname_label = tk.Label(root, text="Compare Two Signatures:", font=10)
-    uname_label.place(x=90, y=50)
+    uname_label.place(x=600, y=150)
 
     image1_path_entry = tk.Entry(root, font=10)
-    image1_path_entry.place(x=150, y=120)
+    image1_path_entry.place(x=600, y=220)
     img1_message = tk.Label(root, text="Signature 1", font=10)
-    img1_message.place(x=10, y=120)
+    img1_message.place(x=480, y=220)
 
     img1_capture_button = tk.Button(
         root, text="Capture", font=10, command=lambda: captureImage(ent=image1_path_entry, sign=1))
-    img1_capture_button.place(x=400, y=90)
+    img1_capture_button.place(x=850, y=190)
     img1_capture_button.configure(bg='green', activebackground='darkgreen')
 
     img1_browse_button = tk.Button(
         root, text="Browse", font=10, command=lambda: browsefunc(ent=image1_path_entry))
-    img1_browse_button.place(x=400, y=140)
+    img1_browse_button.place(x=850, y=240)
     img1_browse_button.configure(bg='orange', activebackground='darkorange')
 
     image2_path_entry = tk.Entry(root, font=10)
-    image2_path_entry.place(x=150, y=240)
+    image2_path_entry.place(x=600, y=340)
     img2_message = tk.Label(root, text="Signature 2", font=10)
-    img2_message.place(x=10, y=250)
+    img2_message.place(x=480, y=340)
 
     img2_capture_button = tk.Button(
         root, text="Capture", font=10, command=lambda: captureImage(ent=image2_path_entry, sign=2))
-    img2_capture_button.place(x=400, y=210)
+    img2_capture_button.place(x=850, y=310)
     img2_capture_button.configure(bg='green', activebackground='darkgreen')
 
     img2_browse_button = tk.Button(
         root, text="Browse Image", font=10, command=lambda: browsefunc(ent=image2_path_entry))
-    img2_browse_button.place(x=400, y=260)
+    img2_browse_button.place(x=850, y=360)
     img2_browse_button.configure(bg='orange', activebackground='darkorange')
 
     folder_browse_button = tk.Button(
         root, text="Browse Folder", font=10, command=lambda: browse_folder(ent=image2_path_entry))
-    folder_browse_button.place(x=400, y=300)
+    folder_browse_button.place(x=850, y=400)
     folder_browse_button.configure(bg='orange', activebackground='darkorange')
 
     compare_button = tk.Button(
         root, text="Compare", font=10, command=lambda: checkSimilarity(window=root,
                                                                        path1=image1_path_entry.get(),
                                                                        path2=image2_path_entry.get(),))
-    compare_button.place(x=200, y=320)
+    compare_button.place(x=600, y=480)
     compare_button.configure(bg='yellow', activebackground='lightyellow')
 
     forgery_check_button = tk.Button(
@@ -498,27 +507,21 @@ def main():
                                      original_path=image1_path_entry.get(),
                                      forgery_path=image2_path_entry.get())
     )
-    forgery_check_button.place(x=200, y=380)
+    forgery_check_button.place(x=700, y=480)
     forgery_check_button.configure(bg='red', activebackground='red')
 
     show_both_img_button = tk.Button(
         root, text="Show Signature Images", font=10,
         command=lambda: show_both_signature_images(path1=image1_path_entry.get(), path2=image2_path_entry.get())
     )
-    show_both_img_button.place(x=200, y=420)
+    show_both_img_button.place(x=600, y=520)
     show_both_img_button.configure(bg='blue', activebackground='darkblue')
-    attendance_button = tk.Button(
-        root, text="Attendance Detection", font=10,
-        command=lambda: detect_attendance(window=root, path=image1_path_entry.get())
-    )
-    attendance_button.place(x=200, y=480)
-    attendance_button.configure(bg='green', activebackground='darkgreen')
 
     open_file_button = tk.Button(root, text="Open File", font=10, command=open_file, bg='yellow', activebackground='yellow', fg='black', padx=10, pady=5)
-    open_file_button.place(x=50, y=550)
+    open_file_button.place(x=300, y=650)
 
     exit_button = tk.Button(root, text="Exit", font=10, command=exit_application, bg='yellow', activebackground='yellow', fg='black', padx=10, pady=5)
-    exit_button.place(x=420, y=20)
+    exit_button.place(x=1050, y=150)
 
     # Show the login page initially and hide the main application window
     root.withdraw()  # Hide the main application window
